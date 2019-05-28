@@ -14,9 +14,9 @@ def hello_world():
     return 'Hello World!'
 
 
-@app.route(endpoint + '/sensors/temperature')
+@app.route(endpoint + '/sensors/temperature', methods=['GET'])
 def temperature():
-    return jsonify(temperature_sensor.read_temp()), 200
+    return jsonify(temperature=temperature_sensor.read_temp()), 200
 
 
 if __name__ == '__main__':
