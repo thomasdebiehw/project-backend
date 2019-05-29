@@ -2,10 +2,18 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from classes.sensor_ds18b20 import SensorDS18B20
 from classes.database import Database
+from classes.led import LED
+from classes.buzzer import Buzzer
 from datetime import datetime
+from RPi import GPIO
 
+GPIO.cleanup()
 app = Flask(__name__)
 CORS(app)
+led = LED(15)
+led.off()
+buzzer = Buzzer(13)
+buzzer.off()
 
 temperature_sensor = SensorDS18B20()
 conn = Database(app=app, user='project', password='ditwachtwoordmagjezekerweten',
@@ -20,6 +28,8 @@ def hello_world():
 
 @app.route(endpoint + '/sensors/temperature', methods=['GET'])
 def temperature():
+    led.on()
+    buzzer.countdown(5)
     if request.method == 'GET':
         val = temperature_sensor.read_temp()
         insert_test(val)
@@ -45,5 +55,7 @@ def insert_test(temperatuur):
         st = 'INSERT INTO `alarmostat`.`measurement` (idmeasurement, measurementdatetime, measuredvalue, idcomponent)' \
              'VALUES (DEFAULT, \'{0}\', \'{1}\',1);'.format(formatted_date, temperatuur)
         conn.set_data(st)
+        led.off()
+        buzzer.off()
     except Exception as e:
         print(e)
