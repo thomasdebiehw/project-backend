@@ -16,12 +16,11 @@ class Buzzer:
         GPIO.output(self.buzzer_pin, GPIO.LOW)
 
     def countdown(self, duration):
-        for i in range(duration):
+        for i in range(duration*3):
             self.on()
-            time.sleep(0.2)
+            time.sleep(0.1)
             self.off()
-            time.sleep(0.4)
-            self.on()
-            time.sleep(0.2)
-            self.off()
-            time.sleep(0.2)
+            time.sleep(0.05)
+        self.on()
+        time.sleep(2)
+        self.off()
