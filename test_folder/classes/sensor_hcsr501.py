@@ -1,6 +1,7 @@
 from RPi import GPIO
 import threading
 from classes.led import LED
+import time
 
 
 class SensorHCSR501:
@@ -36,4 +37,5 @@ class SensorHCSR501:
                 self.led.on()
             else:
                 self.led.off()
+            time.sleep(0.1)
 
