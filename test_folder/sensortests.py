@@ -3,11 +3,12 @@ import time
 from classes.sensor_ada375 import SensorADA375
 from classes.sensor_hcsr501 import SensorHCSR501
 from classes.lcd import LCD
+from classes.rotary_encoder import RotaryEncoder
 
 sensor = SensorADA375(16)
 pir = SensorHCSR501(12, 14, True)
 lcd = LCD()
-
+renc = RotaryEncoder(26, 24, 19)
 
 
 def foo():
@@ -28,14 +29,24 @@ def sensor_callback(e):
 
 def pir_callback(e=0):
     print("movement detected")
-    #lcd.reset_lcd()
-    #lcd.write_string("BEWEGING")
+    lcd.reset_lcd()
+    lcd.write_string("BEWEGING")
+
+
+def left_callback(e=0):
+    print("turned left")
+
+
+def right_callback(e=0):
+    print("turned right")
 
 
 def main():
     try:
         sensor.on_change(sensor_callback)
         pir.on_movement(pir_callback)
+        renc.on_turn_left(left_callback)
+        renc.on_turn_right(right_callback)
         lcd.reset_lcd()
         while True:
             if sensor.is_closed():
