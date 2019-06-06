@@ -1,14 +1,12 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from classes.database import Database
-import hwinterface
-import multiprocessing
+from hwinterface import HWInterface
 
 
 app = Flask(__name__)
 CORS(app)
-hw = multiprocessing.Process(target=hwinterface.main)
-hw.start()
+hw = HWInterface()
 
 conn = Database(app=app, user='project', password='ditwachtwoordmagjezekerweten',
                 db='alarmostat', host='169.254.10.1', port=3306)

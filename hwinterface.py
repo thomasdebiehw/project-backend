@@ -1,21 +1,24 @@
 from RPi import GPIO
 import time
-
-a = "running"
-
-
-def main():
-    try:
-        while True:
-            print(a)
-            time.sleep(1)
-
-    except KeyboardInterrupt:
-        pass
-    finally:
-        GPIO.cleanup()
-        print("gestopt")
+import threading
+from classes.sensor_ds18b20 import SensorDS18B20
 
 
-if __name__ == '__main__':
-    main()
+class HWInterface:
+    def __init__(self):
+        self.a = "running"
+        t = threading.Thread(target=self.main)
+        t.start()
+
+    def main(self):
+        try:
+            while True:
+                print(self.a)
+                time.sleep(1)
+
+        except KeyboardInterrupt:
+            pass
+        finally:
+            GPIO.cleanup()
+            print("gestopt")
+
