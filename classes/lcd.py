@@ -32,14 +32,14 @@ class LCD:
         self.__set_data_bit__(ord(value))
         self.__pulse__()
 
-    def write_string(self, value):
+    def write_string(self, value, auto_linechange=True):
         count = 0
         for i in value:
-            if count == 16:
+            if count == 16 and auto_linechange:
                 self.second_line()
             self.write_character(i)
             count += 1
-            # time.sleep(0.01)
+
 
     def write_instructions(self, value):
         GPIO.output(self.rs, 0)

@@ -42,6 +42,7 @@ class HWInterface:
             while True:
                 if not self.stop:
                     if self.button_pressed:
+                        self.lcd.reset_lcd()
                         if self.screen < 4:
                             self.screen += 1
                         else:
@@ -107,7 +108,7 @@ class HWInterface:
                 self.lcd.write_string(ipslist[1])
 
         elif self.screen == 1:
-            self.lcd.reset_lcd()
+            self.lcd.move_cursor(0)
             self.lcd.write_string("Current: ")
             temp = self.temperature_sensor.read_temp()
             self.lcd.write_string("{0}C".format(str(temp)))
@@ -115,11 +116,10 @@ class HWInterface:
             self.lcd.write_string("Set: {0}C".format(str(self.temperature_set)))
 
         elif self.screen == 2:
+            self.lcd.move_cursor(0)
             if self.door_sensor.is_closed():
-                self.lcd.reset_lcd()
                 self.lcd.write_string("Door closed")
             else:
-                self.lcd.reset_lcd()
                 self.lcd.write_string("Door open")
 
         elif self.screen == 3:
@@ -130,9 +130,10 @@ class HWInterface:
 
         elif self.screen == 4:
             now = datetime.datetime.now()
-            #self.lcd.reset_lcd()
             self.lcd.move_cursor(0)
-            self.lcd.write_string(now.strftime("%Y-%m-%d %H:%M"))
+            self.lcd.write_string(now.strftime("%Y-%m-%d"))
+            self.lcd.second_line()
+            self.lcd.write_string(now.strftime("%H:%M:%S"))
 
 
 

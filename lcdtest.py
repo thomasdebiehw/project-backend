@@ -8,15 +8,15 @@ def main():
     try:
         while True:
             lcd.reset_lcd()
-            time.sleep(2)
-
-            lcd.move_cursor(1)
-            time.sleep(2)
             lcd.show_cursor(False)
             time.sleep(2)
-
-            lcd.write_string("test")
+            lcd.write_string("lijn tekst langer dan 16 karakters", False)
             time.sleep(2)
+            while True:
+                lcd.write_instructions(0x18)
+                time.sleep(0.3)
+
+            # lcd.write_instructions(	0x1C) # shift right
 
     except KeyboardInterrupt:
         pass
