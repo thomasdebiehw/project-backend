@@ -6,7 +6,7 @@ from classes.lcd import LCD
 from classes.rotary_encoder import RotaryEncoder
 
 sensor = SensorADA375(16)
-pir = SensorHCSR501(12, 14, True)
+pir = SensorHCSR501(12, 14)
 lcd = LCD()
 renc = RotaryEncoder(26, 24, 19)
 
