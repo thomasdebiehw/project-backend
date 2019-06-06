@@ -18,4 +18,3 @@ try:
         sleep(5)
 except KeyboardInterrupt:
     GPIO.cleanup()
-    raise

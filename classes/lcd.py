@@ -32,8 +32,12 @@ class LCD:
         self.__pulse__()
 
     def write_string(self, value):
+        count = 0
         for i in value:
+            if count == 16:
+                self.second_line()
             self.write_character(i)
+            count += 1
             # time.sleep(0.01)
 
     def write_instructions(self, value):

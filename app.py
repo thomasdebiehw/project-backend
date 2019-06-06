@@ -16,7 +16,7 @@ endpoint = '/api/v1'
 
 
 def close_thread(signum=0, frame=0):
-    print("ctrlchandler")
+    print("closing thread")
     hw.stop = True
 
 
