@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from classes.database import Database
 from hwinterface import HWInterface
+import signal
+import atexit
 
 
 app = Flask(__name__)
@@ -13,6 +15,15 @@ conn = Database(app=app, user='project', password='ditwachtwoordmagjezekerweten'
 endpoint = '/api/v1'
 
 
+def close_thread(signum=0, frame=0):
+    print("ctrlchandler")
+    hw.stop = True
+
+
+signal.signal(signal.SIGINT, close_thread)
+atexit.register(close_thread)
+
+
 @app.route('/')
 def hello_world():
     return 'Hello World!'
@@ -20,7 +31,9 @@ def hello_world():
 
 @app.route(endpoint + '/sensors/temperature', methods=['GET'])
 def temperature():
-    pass
+    if request.method == 'GET':
+        val = hw.get_temperature()
+        return jsonify(temperature=val), 200
 
 
 @app.route(endpoint + '/components', methods=['GET'])
