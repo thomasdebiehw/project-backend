@@ -10,6 +10,7 @@ class LCD:
         self.is_vier_bits = is_vier_bits
         self.e = e
         self.rs = rs
+        self.__show_cursor = True
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.rs, GPIO.OUT)
@@ -44,6 +45,7 @@ class LCD:
         GPIO.output(self.rs, 0)
         self.__set_data_bit__(value)
         self.__pulse__()
+        time.sleep(0.01)
 
     def second_line(self):
         GPIO.output(self.rs, 0)
@@ -59,4 +61,22 @@ class LCD:
         self.write_instructions(0b00111000)
         self.write_instructions(0b00001111)
         self.write_instructions(1)
+        if not self.__show_cursor:
+            self.write_instructions(0x0C)
+
+    def move_cursor(self, location):
+        if location > 16:
+            loc = 0x80 + 0x40 + location-16
+        else:
+            loc = 0x80 + location
+        self.write_instructions(loc)
+
+    def show_cursor(self, boolean):
+        if boolean:
+            self.write_instructions(0x0F)
+            self.__show_cursor = True
+        else:
+            self.write_instructions(0x0C)
+            self.__show_cursor = False
+
 

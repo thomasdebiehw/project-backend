@@ -1,7 +1,6 @@
+import time, threading, datetime
 from subprocess import check_output
 from RPi import GPIO
-import time
-import threading
 from classes.sensor_ds18b20 import SensorDS18B20
 from classes.sensor_ada375 import SensorADA375
 from classes.sensor_hcsr501 import SensorHCSR501
@@ -30,6 +29,7 @@ class HWInterface:
         self.pir_sensor.on_movement(self.pir_callback)
 
         self.lcd = LCD()
+        self.lcd.show_cursor(False)
         self.led = LED(15)
 
         self.t = threading.Thread(target=self.main)
@@ -42,12 +42,14 @@ class HWInterface:
             while True:
                 if not self.stop:
                     if self.button_pressed:
-                        if self.screen < 2:
+                        if self.screen < 4:
                             self.screen += 1
                         else:
                             self.screen = 0
                         self.lcd_text()
                         self.button_pressed = False
+                    elif self.screen == 4:
+                        self.lcd_text()
                     time.sleep(0.01)
                 else:
                     raise KeyboardInterrupt
@@ -119,6 +121,18 @@ class HWInterface:
             else:
                 self.lcd.reset_lcd()
                 self.lcd.write_string("Door open")
+
+        elif self.screen == 3:
+            self.lcd.reset_lcd()
+            self.lcd.write_string("No events")
+            self.lcd.second_line()
+            self.lcd.write_string("System DISARMED")
+
+        elif self.screen == 4:
+            now = datetime.datetime.now()
+            #self.lcd.reset_lcd()
+            self.lcd.move_cursor(0)
+            self.lcd.write_string(now.strftime("%Y-%m-%d %H:%M"))
 
 
 
