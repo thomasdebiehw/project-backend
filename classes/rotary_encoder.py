@@ -50,5 +50,5 @@ class RotaryEncoder:
         self.callbacks[1] = callback
 
     def on_button_press(self, callback):
-        GPIO.add_event_detect(self.SW, GPIO.FALLING, callback=callback, bouncetime=250)
+        GPIO.add_event_detect(self.SW, GPIO.FALLING, callback=callback, bouncetime=500)
 

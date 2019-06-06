@@ -15,6 +15,7 @@ class HWInterface:
         self.a = "running"
         self.screen = -1
         self.stop = False
+        self.button_pressed = False
         self.temperature_set = 21.000
         self.temperature_sensor = SensorDS18B20()
         self.rotary_encoder = RotaryEncoder(26, 24, 19)
@@ -40,9 +41,14 @@ class HWInterface:
             self.lcd.write_string("ALARMOSTAT")
             while True:
                 if not self.stop:
-                    print(self.a)
-                    self.led.toggle()
-                    time.sleep(1)
+                    if self.button_pressed:
+                        if self.screen < 2:
+                            self.screen += 1
+                        else:
+                            self.screen = 0
+                        self.lcd_text()
+                        self.button_pressed = False
+                    time.sleep(0.01)
                 else:
                     raise KeyboardInterrupt
 
@@ -51,15 +57,11 @@ class HWInterface:
         finally:
             self.lcd.reset_lcd()
             GPIO.cleanup()
-            print("gestopt")
+            print("thread stopped")
 
     def button_callback(self, e):
         print("button pressed")
-        if self.screen < 1:
-            self.screen += 1
-        else:
-            self.screen = 0
-        self.lcd_text()
+        self.button_pressed = True
 
     def turned_right(self, e=0):
         self.temperature_set = self.temperature_set + 0.500
@@ -75,12 +77,10 @@ class HWInterface:
         print("status deurcontact veranderd")
         if self.door_sensor.is_closed():
             print("deur is nu dicht")
-            # self.lcd.reset_lcd()
-            # self.lcd.write_string("DEUR DICHT")
         else:
             print("deur is nu open")
-            # self.lcd.reset_lcd()
-            # self.lcd.write_string("DEUR OPEN")
+        if self.screen == 2:
+            self.lcd_text()
 
     def pir_callback(self, e=0):
         print("movement detected")
@@ -105,9 +105,20 @@ class HWInterface:
                 self.lcd.write_string(ipslist[1])
 
         elif self.screen == 1:
-            temp = self.temperature_sensor.read_temp()
             self.lcd.reset_lcd()
-            self.lcd.write_string("Current: {0}CSet: {1}C".format(str(temp), str(self.temperature_set)))
+            self.lcd.write_string("Current: ")
+            temp = self.temperature_sensor.read_temp()
+            self.lcd.write_string("{0}C".format(str(temp)))
+            self.lcd.second_line()
+            self.lcd.write_string("Set: {0}C".format(str(self.temperature_set)))
+
+        elif self.screen == 2:
+            if self.door_sensor.is_closed():
+                self.lcd.reset_lcd()
+                self.lcd.write_string("Door closed")
+            else:
+                self.lcd.reset_lcd()
+                self.lcd.write_string("Door open")
 
 
 
