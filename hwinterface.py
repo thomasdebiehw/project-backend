@@ -23,8 +23,9 @@ class HWInterface:
 
         self.armed = False
         self.arming = False
+        self.display_change = False
         self.triggered = False
-        self.countdown = 10
+        self.countdown = 15
 
         self.temperature_set = 21.000
         self.temperature_sensor = SensorDS18B20()
@@ -70,7 +71,7 @@ class HWInterface:
                             self.screen = 0
                         self.lcd_text()
                         self.button_pressed = False
-                    elif self.screen == 4:
+                    elif self.screen == 4 or self.screen == 5:
                         self.lcd_text()
                     time.sleep(0.01)
                 else:
@@ -159,11 +160,24 @@ class HWInterface:
             self.lcd.second_line()
             self.lcd.write_string(now.strftime("%H:%M:%S"))
 
+        elif self.screen == 5:
+            self.lcd.move_cursor(0)
+            if self.arming:
+                self.lcd.write_string("System ARMING in")
+                self.lcd.second_line()
+                self.lcd.write_string("{0} seconds ".format(str(int(self.buzzer.countdown_timer))))
+            elif self.armed:
+                self.lcd.write_string("System ARMED                    ")
+            else:
+                self.lcd.write_string("System DISARMED ")
+                if self.display_change:
+                    self.lcd.second_line()
+                    self.lcd.write_string("Hello {0}".format(self.dbout[0][0]))
+                    self.display_change = False
+
     def rfid(self):
         while True:
             self.rfidtag = self.reader.read_id()
-            self.lcd.reset_lcd()
-            self.lcd.write_string(str(self.rfidtag))
             self.mycursor.execute(
                 "SELECT username FROM user WHERE userrfidtag={0};".format(self.rfidtag))
             self.dbout = []
@@ -171,8 +185,7 @@ class HWInterface:
                 self.dbout.append(x)
             if len(self.dbout) >= 1:
                 print(self.dbout[0][0])
-                self.lcd.second_line()
-                self.lcd.write_string("Hello {0}".format(self.dbout[0][0]))
+                self.lcd.reset_lcd()
                 self.change_alarm_status()
                 time.sleep(2)
             else:
@@ -182,19 +195,26 @@ class HWInterface:
         self.arming = True
         self.buzzer.countdown(self.countdown)
         if self.arming:
+            self.lcd.reset_lcd()
             self.armed = True
+            self.buzzer.sound()
         self.arming = False
 
     def change_alarm_status(self):
         if self.armed:
             self.armed = False
+            self.display_change = True
+            self.buzzer.sound()
         elif self.arming:
             self.arming = False
+            self.display_change = True
             self.buzzer.stop_countdown = True
+            self.buzzer.sound()
         else:
             cd_thread = threading.Thread(target=self.arm)
             cd_thread.setDaemon(True)
             cd_thread.start()
+            self.screen = 5
 
 
 
