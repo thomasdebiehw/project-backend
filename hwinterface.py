@@ -6,6 +6,7 @@ from classes.sensor_ds18b20 import SensorDS18B20
 from classes.sensor_ada375 import SensorADA375
 from classes.sensor_hcsr501 import SensorHCSR501
 from classes.rotary_encoder import RotaryEncoder
+from classes.buzzer import Buzzer
 from classes.led import LED
 from classes.lcd import LCD
 
@@ -15,12 +16,19 @@ class HWInterface:
         self.mydb = mysql.connector.connect(host="localhost", user="project", passwd="ditwachtwoordmagjezekerweten", database="alarmostat")
         self.mycursor = self.mydb.cursor()
         self.dbout = []
+
         self.screen = -1
         self.stop = False
         self.button_pressed = False
+
         self.armed = False
+        self.arming = False
+        self.triggered = False
+        self.countdown = 10
+
         self.temperature_set = 21.000
         self.temperature_sensor = SensorDS18B20()
+
         self.rotary_encoder = RotaryEncoder(26, 24, 19)
         self.rotary_encoder.on_button_press(self.button_callback)
         self.rotary_encoder.on_turn_right(self.turned_right)
@@ -36,6 +44,8 @@ class HWInterface:
         self.lcd.show_cursor(False)
 
         self.led = LED(15)
+        self.buzzer = Buzzer(13)
+        self.buzzer.off()
 
         self.reader = SimpleMFRC522()
         self.rfidtag = 0
@@ -137,7 +147,10 @@ class HWInterface:
             self.lcd.reset_lcd()
             self.lcd.write_string("No events")
             self.lcd.second_line()
-            self.lcd.write_string("System DISARMED")
+            if self.armed:
+                self.lcd.write_string("System ARMED")
+            else:
+                self.lcd.write_string("System DISARMED")
 
         elif self.screen == 4:
             now = datetime.datetime.now()
@@ -160,7 +173,30 @@ class HWInterface:
                 print(self.dbout[0][0])
                 self.lcd.second_line()
                 self.lcd.write_string("Hello {0}".format(self.dbout[0][0]))
-                time.sleep(3)
+                self.change_alarm_status()
+                time.sleep(2)
+            else:
+                time.sleep(2)
+
+    def arm(self):
+        self.arming = True
+        self.buzzer.countdown(self.countdown)
+        if self.arming:
+            self.armed = True
+        self.arming = False
+
+    def change_alarm_status(self):
+        if self.armed:
+            self.armed = False
+        elif self.arming:
+            self.arming = False
+            self.buzzer.stop_countdown = True
+        else:
+            cd_thread = threading.Thread(target=self.arm)
+            cd_thread.setDaemon(True)
+            cd_thread.start()
+
+
 
 
 
