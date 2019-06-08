@@ -1,6 +1,7 @@
-import time, threading, datetime
+import time, threading, datetime, mysql.connector
 from subprocess import check_output
 from RPi import GPIO
+from mfrc522 import SimpleMFRC522
 from classes.sensor_ds18b20 import SensorDS18B20
 from classes.sensor_ada375 import SensorADA375
 from classes.sensor_hcsr501 import SensorHCSR501
@@ -11,10 +12,13 @@ from classes.lcd import LCD
 
 class HWInterface:
     def __init__(self):
-        self.a = "running"
+        self.mydb = mysql.connector.connect(host="localhost", user="project", passwd="ditwachtwoordmagjezekerweten", database="alarmostat")
+        self.mycursor = self.mydb.cursor()
+        self.dbout = []
         self.screen = -1
         self.stop = False
         self.button_pressed = False
+        self.armed = False
         self.temperature_set = 21.000
         self.temperature_sensor = SensorDS18B20()
         self.rotary_encoder = RotaryEncoder(26, 24, 19)
@@ -30,7 +34,14 @@ class HWInterface:
 
         self.lcd = LCD()
         self.lcd.show_cursor(False)
+
         self.led = LED(15)
+
+        self.reader = SimpleMFRC522()
+        self.rfidtag = 0
+        self.rfidt = threading.Thread(target=self.rfid)
+        self.rfidt.setDaemon(True)
+        self.rfidt.start()
 
         self.t = threading.Thread(target=self.main)
         self.t.start()
@@ -134,6 +145,22 @@ class HWInterface:
             self.lcd.write_string(now.strftime("%Y-%m-%d"))
             self.lcd.second_line()
             self.lcd.write_string(now.strftime("%H:%M:%S"))
+
+    def rfid(self):
+        while True:
+            self.rfidtag = self.reader.read_id()
+            self.lcd.reset_lcd()
+            self.lcd.write_string(str(self.rfidtag))
+            self.mycursor.execute(
+                "SELECT username FROM user WHERE userrfidtag={0};".format(self.rfidtag))
+            self.dbout = []
+            for x in self.mycursor:
+                self.dbout.append(x)
+            if len(self.dbout) >= 1:
+                print(self.dbout[0][0])
+                self.lcd.second_line()
+                self.lcd.write_string("Hello {0}".format(self.dbout[0][0]))
+                time.sleep(3)
 
 
 
