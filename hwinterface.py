@@ -25,6 +25,7 @@ class HWInterface:
         self.arming = False
         self.display_change = False
         self.triggered = False
+        self.last_event_user = 0
         self.countdown = 15
 
         self.temperature_set = 21.000
@@ -178,6 +179,7 @@ class HWInterface:
     def rfid(self):
         while True:
             self.rfidtag = self.reader.read_id()
+            self.db_add_measurement(self.rfidtag, "rfidrc522")
             self.mycursor.execute(
                 "SELECT username FROM user WHERE userrfidtag={0};".format(self.rfidtag))
             self.dbout = []
@@ -185,13 +187,14 @@ class HWInterface:
                 self.dbout.append(x)
             if len(self.dbout) >= 1:
                 print(self.dbout[0][0])
+                self.last_event_user = self.dbout[0][0]
                 self.lcd.reset_lcd()
-                self.change_alarm_status()
+                self.change_alarm_status(True)
                 time.sleep(2)
             else:
                 time.sleep(2)
 
-    def arm(self):
+    def arm(self, rfid=False):
         self.arming = True
         self.buzzer.countdown(self.countdown)
         if self.arming:
@@ -199,22 +202,72 @@ class HWInterface:
             self.armed = True
             self.buzzer.sound()
         self.arming = False
+        if rfid:
+            self.db_add_event("system_armed", "rfidrc522", self.last_event_user)
 
-    def change_alarm_status(self):
+    def change_alarm_status(self, rfid=False):
         if self.armed:
             self.armed = False
             self.display_change = True
             self.buzzer.sound()
+            if rfid:
+                self.db_add_event("system_disarmed", "rfidrc522", self.last_event_user)
         elif self.arming:
             self.arming = False
             self.display_change = True
             self.buzzer.stop_countdown = True
             self.buzzer.sound()
         else:
-            cd_thread = threading.Thread(target=self.arm)
+            cd_thread = threading.Thread(target=self.arm, args=(rfid,))
             cd_thread.setDaemon(True)
             cd_thread.start()
             self.screen = 5
+            self.db_add_event("system_arming", "rfidrc522", self.last_event_user)
+
+    def db_add_event(self, eventtype, component, user):
+        now = datetime.datetime.now()
+        formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.mycursor.execute(
+            "SELECT iduser FROM user WHERE username=\'{0}\';".format(user))
+        self.dbout = []
+        for x in self.mycursor:
+            self.dbout.append(x)
+            print(x)
+        iduser = self.dbout[0][0]
+        self.mycursor.execute(
+            "SELECT idcomponent FROM component WHERE componentname=\'{0}\';".format(component))
+        self.dbout = []
+        for x in self.mycursor:
+            self.dbout.append(x)
+            print(x)
+        idcomponent = self.dbout[0][0]
+        sql = "INSERT INTO event (idevent, eventdatetime, eventtype, idcomponent, iduser) VALUES (DEFAULT, %s, %s, %s, %s);"
+        val = (formatted_date, eventtype, idcomponent, iduser)
+        self.mycursor.execute(sql, val)
+        self.mydb.commit()
+        self.dbout = []
+        for x in self.mycursor:
+            self.dbout.append(x)
+            print(x)
+
+    def db_add_measurement(self, measuredvalue, component):
+        now = datetime.datetime.now()
+        formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.mycursor.execute(
+            "SELECT idcomponent FROM component WHERE componentname=\'{0}\';".format(component))
+        self.dbout = []
+        for x in self.mycursor:
+            self.dbout.append(x)
+            print(x)
+        idcomponent = self.dbout[0][0]
+        sql = "INSERT INTO measurement (idmeasurement, measurementdatetime, measuredvalue, idcomponent) VALUES (DEFAULT, %s, %s, %s);"
+        val = (formatted_date, measuredvalue, idcomponent)
+        self.mycursor.execute(sql, val)
+        self.mydb.commit()
+        self.dbout = []
+        for x in self.mycursor:
+            self.dbout.append(x)
+            print(x)
 
 
 
