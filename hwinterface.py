@@ -184,9 +184,9 @@ class HWInterface:
             elif self.triggered and not self.alarm_raised:
                 self.lcd.write_string("DISARM NOW")
                 self.lcd.second_line()
-                self.lcd.write_string("Alarm in {0} seconds ".format(str(int(self.buzzer.countdown_timer))))
+                self.lcd.write_string("{0} seconds ".format(str(int(self.buzzer.countdown_timer))))
             elif self.alarm_raised:
-                self.lcd.write_string("ALARM")
+                self.lcd.write_string("ALARM                           ")
             elif self.armed:
                 self.lcd.write_string("System ARMED                    ")
             else:
@@ -249,8 +249,8 @@ class HWInterface:
 
     def walkin(self, sensor):
         self.db_add_event("walkin_triggered", sensor, "system")
-        self.lcd.reset_lcd()
         self.triggered = True
+        self.lcd.reset_lcd()
         self.buzzer.countdown(self.countdown_walkin)
         if self.triggered:
             self.lcd.reset_lcd()
