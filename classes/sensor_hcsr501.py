@@ -3,9 +3,10 @@ from classes.led import LED
 
 
 class SensorHCSR501:
-    def __init__(self, sensor_pin, statusled_pin=0):
+    def __init__(self, sensor_pin, statusled_pin=0, walkin = False):
         self.sensor_pin = sensor_pin
         self.led = 0
+        self.walkin = walkin
         self.callbacks = []
         if statusled_pin:
             self.led = LED(statusled_pin)

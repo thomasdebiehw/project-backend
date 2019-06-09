@@ -25,8 +25,10 @@ class HWInterface:
         self.arming = False
         self.display_change = False
         self.triggered = False
+        self.alarm_raised = False
         self.last_event_user = 0
-        self.countdown = 15
+        self.countdown_walkin = 15
+        self.countdown_walkout = 15
 
         self.temperature_set = 21.000
         self.temperature_sensor = SensorDS18B20()
@@ -100,21 +102,33 @@ class HWInterface:
         print("left")
 
     def door_sensor_callback(self, e):
-        print("status deurcontact veranderd")
         if self.door_sensor.is_closed():
-            print("deur is nu dicht")
+            print("door closed")
+            self.db_add_measurement("closed", "ada375")
         else:
-            print("deur is nu open")
+            print("door opened")
+            self.db_add_measurement("opened", "ada375")
+            if self.armed and not self.triggered and self.door_sensor.walkin:
+                self.triggered = True
+                self.walkin("ada375")
+            elif self.armed and not self.triggered and not self.door_sensor.walkin:
+                self.triggered = True
+                self.raise_alarm("ada375")
         if self.screen == 2:
             self.lcd_text()
 
     def pir_callback(self, e=0):
         print("movement detected")
+        if self.armed and not self.triggered and not self.pir_sensor.walkin:
+            self.triggered = True
+            self.raise_alarm("hcsr501")
         # self.lcd.reset_lcd()
         # self.lcd.write_string("BEWEGING")
 
     def get_temperature(self):
-        return self.temperature_sensor.read_temp()
+        temp = self.temperature_sensor.read_temp()
+        self.db_add_measurement(temp, "ds18b20")
+        return temp
 
     def get_door_is_closed(self):
         return self.door_sensor.is_closed()
@@ -132,11 +146,11 @@ class HWInterface:
 
         elif self.screen == 1:
             self.lcd.move_cursor(0)
-            self.lcd.write_string("Current: ")
-            temp = self.temperature_sensor.read_temp()
-            self.lcd.write_string("{0}C".format(str(temp)))
-            self.lcd.second_line()
             self.lcd.write_string("Set: {0}C".format(str(self.temperature_set)))
+            self.lcd.second_line()
+            self.lcd.write_string("Current: ")
+            temp = self.get_temperature()
+            self.lcd.write_string("{0}C".format(str(temp)))
 
         elif self.screen == 2:
             self.lcd.move_cursor(0)
@@ -167,6 +181,12 @@ class HWInterface:
                 self.lcd.write_string("System ARMING in")
                 self.lcd.second_line()
                 self.lcd.write_string("{0} seconds ".format(str(int(self.buzzer.countdown_timer))))
+            elif self.triggered and not self.alarm_raised:
+                self.lcd.write_string("DISARM NOW")
+                self.lcd.second_line()
+                self.lcd.write_string("Alarm in {0} seconds ".format(str(int(self.buzzer.countdown_timer))))
+            elif self.alarm_raised:
+                self.lcd.write_string("ALARM")
             elif self.armed:
                 self.lcd.write_string("System ARMED                    ")
             else:
@@ -196,7 +216,7 @@ class HWInterface:
 
     def arm(self, rfid=False):
         self.arming = True
-        self.buzzer.countdown(self.countdown)
+        self.buzzer.countdown(self.countdown_walkout)
         if self.arming:
             self.lcd.reset_lcd()
             self.armed = True
@@ -209,13 +229,16 @@ class HWInterface:
         if self.armed:
             self.armed = False
             self.display_change = True
+            self.buzzer.stop_action = True
+            self.triggered = False
+            self.alarm_raised = False
             self.buzzer.sound()
             if rfid:
                 self.db_add_event("system_disarmed", "rfidrc522", self.last_event_user)
         elif self.arming:
             self.arming = False
             self.display_change = True
-            self.buzzer.stop_countdown = True
+            self.buzzer.stop_action = True
             self.buzzer.sound()
         else:
             cd_thread = threading.Thread(target=self.arm, args=(rfid,))
@@ -223,6 +246,22 @@ class HWInterface:
             cd_thread.start()
             self.screen = 5
             self.db_add_event("system_arming", "rfidrc522", self.last_event_user)
+
+    def walkin(self, sensor):
+        self.db_add_event("walkin_triggered", sensor, "system")
+        self.lcd.reset_lcd()
+        self.triggered = True
+        self.buzzer.countdown(self.countdown_walkin)
+        if self.triggered:
+            self.lcd.reset_lcd()
+            self.raise_alarm(sensor)
+
+    def raise_alarm(self, sensor):
+        alarmt = threading.Thread(target=self.buzzer.alarm)
+        alarmt.setDaemon(True)
+        alarmt.start()
+        self.alarm_raised = True
+        self.db_add_event("alarm_raised", sensor, "system")
 
     def db_add_event(self, eventtype, component, user):
         now = datetime.datetime.now()

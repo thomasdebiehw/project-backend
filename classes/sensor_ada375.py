@@ -2,8 +2,9 @@ from RPi import GPIO
 
 
 class SensorADA375:
-    def __init__(self, sensor_pin):
+    def __init__(self, sensor_pin, walkin = True):
         self.sensor_pin = sensor_pin
+        self.walkin = walkin
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
