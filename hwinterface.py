@@ -110,7 +110,9 @@ class HWInterface:
             self.db_add_measurement("opened", "ada375")
             if self.armed and not self.triggered and self.door_sensor.walkin:
                 self.triggered = True
-                self.walkin("ada375")
+                wit = threading.Thread(target=self.walkin, args=("ada375",))
+                wit.setDaemon(True)
+                wit.start()
             elif self.armed and not self.triggered and not self.door_sensor.walkin:
                 self.triggered = True
                 self.raise_alarm("ada375")
@@ -119,11 +121,15 @@ class HWInterface:
 
     def pir_callback(self, e=0):
         print("movement detected")
+        self.db_add_measurement("movement", "hcsr501")
         if self.armed and not self.triggered and not self.pir_sensor.walkin:
             self.triggered = True
             self.raise_alarm("hcsr501")
-        # self.lcd.reset_lcd()
-        # self.lcd.write_string("BEWEGING")
+        elif self.armed and not self.triggered and self.pir_sensor.walkin:
+            self.triggered = True
+            wit = threading.Thread(target=self.walkin, args=("hcsr501",))
+            wit.setDaemon(True)
+            wit.start()
 
     def get_temperature(self):
         temp = self.temperature_sensor.read_temp()
@@ -221,9 +227,9 @@ class HWInterface:
             self.lcd.reset_lcd()
             self.armed = True
             self.buzzer.sound()
-        self.arming = False
-        if rfid:
+        if rfid and self.arming:
             self.db_add_event("system_armed", "rfidrc522", self.last_event_user)
+        self.arming = False
 
     def change_alarm_status(self, rfid=False):
         if self.armed:
@@ -240,6 +246,7 @@ class HWInterface:
             self.display_change = True
             self.buzzer.stop_action = True
             self.buzzer.sound()
+            self.db_add_event("system_arming_canceled", "rfidrc522", self.last_event_user)
         else:
             cd_thread = threading.Thread(target=self.arm, args=(rfid,))
             cd_thread.setDaemon(True)
