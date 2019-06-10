@@ -51,7 +51,7 @@ class HWInterface:
         self.lcd.show_cursor(False)
 
         self.led = LED(15)
-        self.led.off()
+        self.led.turn_on_for_x_secs(1)
         self.buzzer = Buzzer(13)
         self.buzzer.off()
 
@@ -61,7 +61,7 @@ class HWInterface:
         self.rfidt.setDaemon(True)
         self.rfidt.start()
 
-        self.tempt = threading.Timer(30.0, self.__update_temperature)
+        self.tempt = threading.Timer(10.0, self.__update_temperature)
         self.tempt.setDaemon(True)
         self.tempt.start()
 
@@ -76,7 +76,7 @@ class HWInterface:
                 if not self.stop:
                     if not self.tempt.is_alive():
                         self.tempt.cancel()
-                        self.tempt = threading.Timer(30.0, self.__update_temperature)
+                        self.tempt = threading.Timer(20.0, self.__update_temperature)
                         self.tempt.setDaemon(True)
                         self.tempt.start()
                     if self.button_pressed:
@@ -106,12 +106,10 @@ class HWInterface:
 
     def turned_right(self, e=0):
         self.temperature_set = self.temperature_set + 0.500
-        self.lcd_text()
         print("right")
 
     def turned_left(self, e=0):
         self.temperature_set = self.temperature_set - 0.500
-        self.lcd_text()
         print("left")
 
     def door_sensor_callback(self, e):
@@ -152,6 +150,7 @@ class HWInterface:
     def __update_temperature(self):
         print("temp update")
         self.current_temperature = self.get_temperature()
+        self.temperature_control()
 
     def get_door_is_closed(self):
         return self.door_sensor.is_closed()
@@ -173,7 +172,7 @@ class HWInterface:
             self.lcd.second_line()
             self.lcd.write_string("Current: ")
             temp = self.current_temperature
-            self.lcd.write_string("{0}C".format(str(temp)))
+            self.lcd.write_string("{0}C  ".format(str(temp)))
 
         elif self.screen == 2:
             self.lcd.move_cursor(0)
@@ -203,7 +202,7 @@ class HWInterface:
             if self.arming:
                 self.lcd.write_string("System ARMING in")
                 self.lcd.second_line()
-                self.lcd.write_string("{0} seconds ".format(str(int(self.buzzer.countdown_timer))))
+                self.lcd.write_string("{0} seconds      ".format(str(int(self.buzzer.countdown_timer))))
             elif self.triggered and not self.alarm_raised:
                 self.lcd.write_string("DISARM NOW")
                 self.lcd.second_line()
@@ -333,16 +332,12 @@ class HWInterface:
             print(x)
 
     def temperature_control(self):
-        if self.arming:
-            self.temperature_previous = self.temperature_set
-            self.temperature_set = self.temperature_armed
-        elif not self.armed and not self.arming:
-            self.temperature_set = self.temperature_previous
-
-        if self.get_temperature() >= self.temperature_set + 1:
-            self.led.off()
-        elif self.get_temperature() <= self.temperature_set - 1:
+        if self.temperature_set - self.current_temperature >= 0.5 and not self.led.is_on():
+            print("aan")
             self.led.on()
+        elif self.current_temperature - self.temperature_set >= 0.5 and self.led.is_on():
+            print("uit")
+            self.led.off()
 
 
 

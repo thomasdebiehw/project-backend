@@ -28,7 +28,7 @@ class LED:
         self.t.start()
 
     def is_on(self):
-        return self.__is_on()
+        return self.__is_on_bool
 
     def toggle(self):
         if self.__is_on_bool:

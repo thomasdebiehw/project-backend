@@ -47,7 +47,7 @@ def get_components():
 
 
 @app.route(endpoint + '/list/events', methods=['GET'])
-def get_components():
+def get_events():
     if request.method == 'GET':
         components = conn.get_data(
             "SELECT * FROM event ORDER BY idevent DESC LIMIT 100;")
@@ -55,7 +55,7 @@ def get_components():
 
 
 @app.route(endpoint + '/list/measurements', methods=['GET'])
-def get_components():
+def get_measurements():
     if request.method == 'GET':
         components = conn.get_data(
             "SELECT * FROM measurement ORDER BY idmeasurement DESC LIMIT 100;")
