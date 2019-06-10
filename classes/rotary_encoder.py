@@ -15,7 +15,7 @@ class RotaryEncoder:
         self.clkLastState = GPIO.input(self.CLK)
         self.dtState = GPIO.input(self.DT)
         self.counter = 0
-        GPIO.add_event_detect(self.CLK, GPIO.FALLING, callback=self.__change, bouncetime=1)
+        GPIO.add_event_detect(self.CLK, GPIO.BOTH, callback=self.__change, bouncetime=50)
         self.callbacks = [self.__foo, self.__foo]
 
     def __foo(self):
@@ -32,16 +32,33 @@ class RotaryEncoder:
     #                 self.callbacks[1]()
     #     self.clkLastState = self.clkState
 
+    # def __change(self, e=0):
+    #     self.clkState = GPIO.input(self.CLK)
+    #
+    #     if self.clkState != self.clkLastState:
+    #         self.dtState = GPIO.input(self.DT)
+    #         if self.dtState == self.clkState:  # turned to the left
+    #             self.callbacks[0]()
+    #         else:  # turned to the right
+    #             self.callbacks[1]()
+    #     self.clkLastState = self.clkState
+
     def __change(self, e=0):
         self.clkState = GPIO.input(self.CLK)
 
         if self.clkState != self.clkLastState:
-            self.dtState = GPIO.input(self.DT)
-            if self.dtState == self.clkState:  # turned to the left
-                self.callbacks[0]()
-            else:  # turned to the right
+
+            if GPIO.input(self.DT) != self.clkState:
+                self.counter += 1
+                direction = True;
+            else:
+                direction = False
+                self.counter = self.counter - 1
+
+            if direction:
                 self.callbacks[1]()
-        self.clkLastState = self.clkState
+            else:
+                self.callbacks[0]()
 
     def on_turn_left(self, callback):
         self.callbacks[0] = callback

@@ -30,10 +30,13 @@ class HWInterface:
         self.countdown_walkin = 15
         self.countdown_walkout = 15
 
+        self.temperature_previous = 21.000
         self.temperature_set = 21.000
+        self.temperature_armed = 16.000
         self.temperature_sensor = SensorDS18B20()
+        self.current_temperature = self.get_temperature()
 
-        self.rotary_encoder = RotaryEncoder(26, 24, 19)
+        self.rotary_encoder = RotaryEncoder(26, 18, 19)
         self.rotary_encoder.on_button_press(self.button_callback)
         self.rotary_encoder.on_turn_right(self.turned_right)
         self.rotary_encoder.on_turn_left(self.turned_left)
@@ -48,6 +51,7 @@ class HWInterface:
         self.lcd.show_cursor(False)
 
         self.led = LED(15)
+        self.led.off()
         self.buzzer = Buzzer(13)
         self.buzzer.off()
 
@@ -56,6 +60,10 @@ class HWInterface:
         self.rfidt = threading.Thread(target=self.rfid)
         self.rfidt.setDaemon(True)
         self.rfidt.start()
+
+        self.tempt = threading.Timer(30.0, self.__update_temperature)
+        self.tempt.setDaemon(True)
+        self.tempt.start()
 
         self.t = threading.Thread(target=self.main)
         self.t.start()
@@ -66,6 +74,11 @@ class HWInterface:
             self.lcd.write_string("ALARMOSTAT")
             while True:
                 if not self.stop:
+                    if not self.tempt.is_alive():
+                        self.tempt.cancel()
+                        self.tempt = threading.Timer(30.0, self.__update_temperature)
+                        self.tempt.setDaemon(True)
+                        self.tempt.start()
                     if self.button_pressed:
                         self.lcd.reset_lcd()
                         if self.screen < 4:
@@ -74,7 +87,7 @@ class HWInterface:
                             self.screen = 0
                         self.lcd_text()
                         self.button_pressed = False
-                    elif self.screen == 4 or self.screen == 5:
+                    elif self.screen == 4 or self.screen == 5 or self.screen == 1:
                         self.lcd_text()
                     time.sleep(0.01)
                 else:
@@ -136,6 +149,10 @@ class HWInterface:
         self.db_add_measurement(temp, "ds18b20")
         return temp
 
+    def __update_temperature(self):
+        print("temp update")
+        self.current_temperature = self.get_temperature()
+
     def get_door_is_closed(self):
         return self.door_sensor.is_closed()
 
@@ -155,7 +172,7 @@ class HWInterface:
             self.lcd.write_string("Set: {0}C".format(str(self.temperature_set)))
             self.lcd.second_line()
             self.lcd.write_string("Current: ")
-            temp = self.get_temperature()
+            temp = self.current_temperature
             self.lcd.write_string("{0}C".format(str(temp)))
 
         elif self.screen == 2:
@@ -314,6 +331,19 @@ class HWInterface:
         for x in self.mycursor:
             self.dbout.append(x)
             print(x)
+
+    def temperature_control(self):
+        if self.arming:
+            self.temperature_previous = self.temperature_set
+            self.temperature_set = self.temperature_armed
+        elif not self.armed and not self.arming:
+            self.temperature_set = self.temperature_previous
+
+        if self.get_temperature() >= self.temperature_set + 1:
+            self.led.off()
+        elif self.get_temperature() <= self.temperature_set - 1:
+            self.led.on()
+
 
 
 
