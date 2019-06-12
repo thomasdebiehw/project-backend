@@ -214,7 +214,7 @@ class HWInterface:
                 self.lcd.write_string("System DISARMED ")
                 if self.display_change:
                     self.lcd.second_line()
-                    self.lcd.write_string("Hello {0}".format(self.dbout[0][0]))
+                    self.lcd.write_string("Hello {0}".format(self.last_event_user))
                     self.display_change = False
 
     def rfid(self):
@@ -244,9 +244,13 @@ class HWInterface:
             self.buzzer.sound()
         if rfid and self.arming:
             self.db_add_event("system_armed", "rfidrc522", self.last_event_user)
+        elif not rfid and self.arming:
+            self.db_add_event("system_armed", "web", self.last_event_user)
         self.arming = False
 
     def change_alarm_status(self, rfid=False):
+        if not rfid:
+            self.last_event_user = "system"
         if self.armed:
             self.armed = False
             self.display_change = True
@@ -256,18 +260,26 @@ class HWInterface:
             self.buzzer.sound()
             if rfid:
                 self.db_add_event("system_disarmed", "rfidrc522", self.last_event_user)
+            else:
+                self.db_add_event("system_disarmed", "web", self.last_event_user)
         elif self.arming:
             self.arming = False
             self.display_change = True
             self.buzzer.stop_action = True
             self.buzzer.sound()
-            self.db_add_event("system_arming_canceled", "rfidrc522", self.last_event_user)
+            if rfid:
+                self.db_add_event("system_arming_canceled", "rfidrc522", self.last_event_user)
+            else:
+                self.db_add_event("system_arming_canceled", "web", self.last_event_user)
         else:
             cd_thread = threading.Thread(target=self.arm, args=(rfid,))
             cd_thread.setDaemon(True)
             cd_thread.start()
             self.screen = 5
-            self.db_add_event("system_arming", "rfidrc522", self.last_event_user)
+            if rfid:
+                self.db_add_event("system_arming", "rfidrc522", self.last_event_user)
+            else:
+                self.db_add_event("system_arming", "web", self.last_event_user)
 
     def walkin(self, sensor):
         self.db_add_event("walkin_triggered", sensor, "system")

@@ -68,6 +68,12 @@ def connecting():
     index_data_emit()
 
 
+@socketio.on("toggle_alarm")
+def toggle_alarm():
+    hw.change_alarm_status()
+    index_data_emit()
+
+
 def periodic_data_emit():
     while True:
         print("periodic emit")
