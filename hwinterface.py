@@ -1,4 +1,4 @@
-import time, threading, datetime, mysql.connector
+import time, threading, multiprocessing, datetime, mysql.connector
 from subprocess import check_output
 from RPi import GPIO
 from mfrc522 import SimpleMFRC522
@@ -59,8 +59,11 @@ class HWInterface:
         self.rfidt = threading.Thread(target=self.rfid)
         self.rfidt.setDaemon(True)
         self.rfidt.start()
+        # self.rfidp = multiprocessing.Process(target=self.rfid)
+        # self.rfidp.daemon = True
+        # self.rfidp.start()
 
-        self.tempt = threading.Timer(10.0, self.__update_temperature)
+        self.tempt = threading.Thread(target=self.__update_temperature)
         self.tempt.setDaemon(True)
         self.tempt.start()
 
@@ -73,22 +76,18 @@ class HWInterface:
             self.lcd.write_string("ALARMOSTAT")
             while True:
                 if not self.stop:
-                    if not self.tempt.is_alive():
-                        self.tempt.cancel()
-                        self.tempt = threading.Timer(20.0, self.__update_temperature)
-                        self.tempt.setDaemon(True)
-                        self.tempt.start()
-                    if self.button_pressed:
-                        self.lcd.reset_lcd()
-                        if self.screen < 4:
-                            self.screen += 1
-                        else:
-                            self.screen = 0
-                        self.lcd_text()
-                        self.button_pressed = False
-                    elif self.screen == 4 or self.screen == 5 or self.screen == 1:
-                        self.lcd_text()
-                    time.sleep(0.01)
+                    # if self.button_pressed:
+                    #     self.lcd.reset_lcd()
+                    #     if self.screen < 4:
+                    #         self.screen += 1
+                    #     else:
+                    #         self.screen = 0
+                    #     self.lcd_text()
+                    #     self.button_pressed = False
+                    # elif self.screen == 4 or self.screen == 5 or self.screen == 1:
+                    #     self.lcd_text()
+                    self.lcd_text()
+                    time.sleep(0.1)
                 else:
                     raise KeyboardInterrupt
 
@@ -102,6 +101,10 @@ class HWInterface:
     def button_callback(self, e):
         print("button pressed")
         self.button_pressed = True
+        if self.screen < 4:
+            self.screen += 1
+        else:
+            self.screen = 0
 
     def turned_right(self, e=0):
         self.temperature_set = self.temperature_set + 0.500
@@ -126,8 +129,6 @@ class HWInterface:
             elif self.armed and not self.triggered and not self.door_sensor.walkin:
                 self.triggered = True
                 self.raise_alarm("ada375")
-        if self.screen == 2:
-            self.lcd_text()
 
     def pir_callback(self, e=0):
         print("movement detected")
@@ -147,26 +148,30 @@ class HWInterface:
         return temp
 
     def __update_temperature(self):
-        print("temp update")
-        self.current_temperature = self.get_temperature()
-        self.temperature_control()
+        while True:
+            print("temp update")
+            self.current_temperature = self.get_temperature()
+            self.temperature_control()
+            time.sleep(20)
 
     def get_door_is_closed(self):
         return self.door_sensor.is_closed()
 
     def lcd_text(self):
+        if self.button_pressed:
+            self.lcd.reset_lcd()
+            self.button_pressed = False
+        self.lcd.move_cursor(0)
         if self.screen == 0:
             ips = check_output(['hostname', '--all-ip-addresses'])
             ips = str(ips)[2:len(ips) - 3]
             ipslist = ips.split(" ")
-            self.lcd.reset_lcd()
             self.lcd.write_string(ipslist[0])
             self.lcd.second_line()
             if len(ipslist) >= 2:
                 self.lcd.write_string(ipslist[1])
 
         elif self.screen == 1:
-            self.lcd.move_cursor(0)
             self.lcd.write_string("Set: {0}C".format(str(self.temperature_set)))
             self.lcd.second_line()
             self.lcd.write_string("Current: ")
@@ -174,14 +179,12 @@ class HWInterface:
             self.lcd.write_string("{0}C  ".format(str(temp)))
 
         elif self.screen == 2:
-            self.lcd.move_cursor(0)
             if self.door_sensor.is_closed():
                 self.lcd.write_string("Door closed")
             else:
-                self.lcd.write_string("Door open")
+                self.lcd.write_string("Door open  ")
 
         elif self.screen == 3:
-            self.lcd.reset_lcd()
             self.lcd.write_string("No events")
             self.lcd.second_line()
             if self.armed:
@@ -191,13 +194,11 @@ class HWInterface:
 
         elif self.screen == 4:
             now = datetime.datetime.now()
-            self.lcd.move_cursor(0)
             self.lcd.write_string(now.strftime("%Y-%m-%d"))
             self.lcd.second_line()
             self.lcd.write_string(now.strftime("%H:%M:%S"))
 
         elif self.screen == 5:
-            self.lcd.move_cursor(0)
             if self.arming:
                 self.lcd.write_string("System ARMING in")
                 self.lcd.second_line()
@@ -314,7 +315,7 @@ class HWInterface:
             self.dbout.append(x)
             print(x)
         idcomponent = self.dbout[0][0]
-        sql = "INSERT INTO event (idevent, eventdatetime, eventtype, idcomponent, iduser) VALUES (DEFAULT, %s, %s, %s, %s);"
+        sql = "INSERT INTO event (idevent, eventdatetime, eventtype, idcomponent, iduser, acknowledged) VALUES (DEFAULT, %s, %s, %s, %s, FALSE);"
         val = (formatted_date, eventtype, idcomponent, iduser)
         self.mycursor.execute(sql, val)
         self.mydb.commit()
