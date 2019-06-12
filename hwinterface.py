@@ -288,6 +288,18 @@ class HWInterface:
         self.alarm_raised = True
         self.db_add_event("alarm_raised", sensor, "system")
 
+    def db_get_values_by_id(self, table, id, column=""):
+        if column == "":
+            self.mycursor.execute(
+                "SELECT * FROM {0} WHERE id{0}={1};".format(table, id))
+        else:
+            self.mycursor.execute(
+                "SELECT {0} FROM {1} WHERE id{1}={2};".format(column, table, id))
+        out = []
+        for x in self.mycursor:
+            out.append(x)
+        return out
+
     def db_add_event(self, eventtype, component, user):
         now = datetime.datetime.now()
         formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
@@ -332,6 +344,24 @@ class HWInterface:
         for x in self.mycursor:
             self.dbout.append(x)
             print(x)
+
+    def db_get_events(self, event_type, acknowledged=False):
+        self.mycursor.execute(
+            "SELECT * FROM event WHERE eventtype=\'{0}\' AND acknowledged=\'{1}\';".format(event_type, acknowledged)
+        )
+        out = []
+        for x in self.mycursor:
+            out.append(x)
+        return out
+
+    def db_get_events_readable(self, event_type, acknowledged=False):
+        data = self.db_get_events(event_type, acknowledged)
+        out = []
+        for x in data:
+            print(x)
+            out.append((x[0], x[1].strftime('%Y-%m-%d %H:%M:%S'), x[2], self.db_get_values_by_id("component", x[3], column="componentname")[0][0], self.db_get_values_by_id("user", x[4], column="username")[0][0], x[5]))
+        print(out)
+        return out
 
     def temperature_control(self):
         if self.temperature_set - self.current_temperature >= 0.5 and not self.led.is_on():

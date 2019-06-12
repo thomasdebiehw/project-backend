@@ -84,6 +84,7 @@ def periodic_data_emit():
     while True:
         print("periodic emit")
         index_data_emit()
+        new_alarm_raised_events_emit()
         time.sleep(10)
 
 
@@ -105,6 +106,11 @@ def index_data_emit():
     socketio.emit("index_emit", {"alarm_status": alarm_status, "heating_status": heating_status,
                                 "set_temperature": hw.temperature_set,
                                 "current_temperature": hw.current_temperature})
+
+
+def new_alarm_raised_events_emit():
+    events = hw.db_get_events_readable("alarm_raised")
+    socketio.emit("new_alarm_raised_events", events)
 
 
 periodic_emit_t = threading.Thread(target=periodic_data_emit)
