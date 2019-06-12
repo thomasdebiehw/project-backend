@@ -8,7 +8,7 @@ class LED:
         self.__is_on_bool = True
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.led_pin, GPIO.OUT)
-        GPIO.output(self.led_pin, GPIO.HIGH)
+        self.off()
         self.t = threading.Timer(1, self.off)
 
     def on(self):

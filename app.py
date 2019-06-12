@@ -3,14 +3,14 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 from classes.database import Database
 from hwinterface import HWInterface
-import signal
-import atexit
+import signal, atexit, time, threading
 
 
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app)
 hw = HWInterface()
+
 
 conn = Database(app=app, user='project', password='ditwachtwoordmagjezekerweten',
                 db='alarmostat', host='169.254.10.1', port=3306)
@@ -64,9 +64,39 @@ def get_measurements():
 
 @socketio.on("connect")
 def connecting():
-    socketio.emit("connected")
     print("Connection with client established")
+    index_data_emit()
 
+
+def periodic_data_emit():
+    while True:
+        print("periodic emit")
+        index_data_emit()
+        time.sleep(10)
+
+
+def index_data_emit():
+    alarm_status = "unavailable"
+    if hw.alarm_raised:
+        alarm_status = "ALARM"
+    elif hw.armed:
+        alarm_status = "Armed"
+    elif not hw.armed and hw.arming:
+        alarm_status = "Arming"
+    elif not hw.armed:
+        alarm_status = "Disarmed"
+    if hw.led.is_on():
+        heating_status = "Heating ON"
+    else:
+        heating_status = "Heating OFF"
+
+    socketio.emit("connected", {"alarm_status": alarm_status, "heating_status": heating_status,
+                                "set_temperature": hw.temperature_set,
+                                "current_temperature": hw.current_temperature})
+
+
+periodic_emit_t = threading.Thread(target=periodic_data_emit)
+periodic_emit_t.start()
 
 if __name__ == '__main__':
     app.run()

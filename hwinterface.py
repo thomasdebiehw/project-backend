@@ -44,14 +44,13 @@ class HWInterface:
         self.door_sensor = SensorADA375(16)
         self.door_sensor.on_change(self.door_sensor_callback)
 
-        self.pir_sensor = SensorHCSR501(12, 14)
+        self.pir_sensor = SensorHCSR501(12, 23)
         self.pir_sensor.on_movement(self.pir_callback)
 
         self.lcd = LCD()
         self.lcd.show_cursor(False)
 
-        self.led = LED(15)
-        self.led.turn_on_for_x_secs(1)
+        self.led = LED(24)
         self.buzzer = Buzzer(13)
         self.buzzer.off()
 
