@@ -90,7 +90,7 @@ def index_data_emit():
     else:
         heating_status = "Heating OFF"
 
-    socketio.emit("connected", {"alarm_status": alarm_status, "heating_status": heating_status,
+    socketio.emit("index_emit", {"alarm_status": alarm_status, "heating_status": heating_status,
                                 "set_temperature": hw.temperature_set,
                                 "current_temperature": hw.current_temperature})
 
