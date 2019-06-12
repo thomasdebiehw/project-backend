@@ -74,6 +74,12 @@ def toggle_alarm():
     index_data_emit()
 
 
+@socketio.on("change-temp")
+def change_temperature(data):
+    print(data)
+    hw.temperature_set = float(data)
+
+
 def periodic_data_emit():
     while True:
         print("periodic emit")
