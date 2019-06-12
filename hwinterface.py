@@ -76,16 +76,6 @@ class HWInterface:
             self.lcd.write_string("ALARMOSTAT")
             while True:
                 if not self.stop:
-                    # if self.button_pressed:
-                    #     self.lcd.reset_lcd()
-                    #     if self.screen < 4:
-                    #         self.screen += 1
-                    #     else:
-                    #         self.screen = 0
-                    #     self.lcd_text()
-                    #     self.button_pressed = False
-                    # elif self.screen == 4 or self.screen == 5 or self.screen == 1:
-                    #     self.lcd_text()
                     self.lcd_text()
                     time.sleep(0.1)
                 else:
