@@ -104,7 +104,7 @@ def index_data_emit():
         alarm_status = "Arming"
     elif not hw.armed:
         alarm_status = "Disarmed"
-    if hw.led.is_on():
+    if hw.heating.is_on():
         heating_status = "Heating ON"
     else:
         heating_status = "Heating OFF"

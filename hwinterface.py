@@ -27,11 +27,12 @@ class HWInterface:
         self.display_change = False
         self.triggered = False
         self.alarm_raised = False
+        self.link_heating = True
         self.last_event_user = 0
-        self.countdown_walkin = 15
-        self.countdown_walkout = 15
+        self.countdown_walkin = 5
+        self.countdown_walkout = 5
 
-        self.temperature_previous = 21.000
+        self.temperature_saved = 21.000
         self.temperature_set = 21.000
         self.temperature_armed = 16.000
         self.temperature_sensor = SensorDS18B20()
@@ -51,7 +52,7 @@ class HWInterface:
         self.lcd = LCD()
         self.lcd.show_cursor(False)
 
-        self.led = LED(24)
+        self.heating = LED(24)
         self.buzzer = Buzzer(13)
         self.buzzer.off()
 
@@ -240,6 +241,9 @@ class HWInterface:
             self.lcd.reset_lcd()
             self.armed = True
             self.buzzer.sound()
+            if self.link_heating:
+                self.temperature_saved = self.temperature_set
+                self.temperature_set = self.temperature_armed
         if rfid and self.arming:
             self.db_add_event("system_armed", "rfidrc522", self.last_event_user)
         elif not rfid and self.arming:
@@ -255,6 +259,8 @@ class HWInterface:
             self.buzzer.stop_action = True
             self.triggered = False
             self.alarm_raised = False
+            if self.link_heating:
+                self.temperature_set = self.temperature_saved
             self.buzzer.sound()
             if rfid:
                 self.db_add_event("system_disarmed", "rfidrc522", self.last_event_user)
@@ -381,12 +387,12 @@ class HWInterface:
             print(x)
 
     def temperature_control(self):
-        if self.temperature_set - self.current_temperature >= 0.5 and not self.led.is_on():
+        if self.temperature_set - self.current_temperature >= 0.5 and not self.heating.is_on():
             print("aan")
-            self.led.on()
-        elif self.current_temperature - self.temperature_set >= 0.5 and self.led.is_on():
+            self.heating.on()
+        elif self.current_temperature - self.temperature_set >= 0.5 and self.heating.is_on():
             print("uit")
-            self.led.off()
+            self.heating.off()
 
 
 
