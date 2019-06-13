@@ -19,7 +19,7 @@ class Buzzer:
 
     def countdown(self, duration):
         self.stop_action = False
-        self.countdown_timer = duration
+        self.countdown_timer = int(duration)
         for i in range(duration - int(duration*0.2)):
             if self.stop_action:
                 break

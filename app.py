@@ -86,6 +86,16 @@ def ack_event(data):
     new_alarm_raised_events_emit()
 
 
+@socketio.on("change-walkin")
+def change_walkin(data):
+    hw.countdown_walkin = int(data)
+
+
+@socketio.on("change-walkout")
+def change_walkout(data):
+    hw.countdown_walkout = int(data)
+
+
 def periodic_data_emit():
     while True:
         print("periodic emit")
