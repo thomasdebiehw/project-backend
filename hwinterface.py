@@ -363,6 +363,16 @@ class HWInterface:
         print(out)
         return out
 
+    def db_acknowledge_event(self, id):
+        print("ack")
+        sql = "UPDATE event SET acknowledged=TRUE WHERE idevent={0};".format(str(id))
+        self.mycursor.execute(sql)
+        self.mydb.commit()
+        self.dbout = []
+        for x in self.mycursor:
+            self.dbout.append(x)
+            print(x)
+
     def temperature_control(self):
         if self.temperature_set - self.current_temperature >= 0.5 and not self.led.is_on():
             print("aan")

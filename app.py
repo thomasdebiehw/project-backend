@@ -80,6 +80,12 @@ def change_temperature(data):
     hw.temperature_set = float(data)
 
 
+@socketio.on("acknowledge_event")
+def ack_event(data):
+    hw.db_acknowledge_event(data)
+    new_alarm_raised_events_emit()
+
+
 def periodic_data_emit():
     while True:
         print("periodic emit")
