@@ -20,6 +20,7 @@ class HWInterface:
         self.screen = -1
         self.stop = False
         self.button_pressed = False
+        self.rotated = False
 
         self.armed = False
         self.arming = False
@@ -99,10 +100,12 @@ class HWInterface:
     def turned_right(self, e=0):
         self.temperature_set = self.temperature_set + 0.500
         print("right")
+        self.rotated = True
 
     def turned_left(self, e=0):
         self.temperature_set = self.temperature_set - 0.500
         print("left")
+        self.rotated = True
 
     def door_sensor_callback(self, e):
         if self.door_sensor.is_closed():
@@ -151,6 +154,10 @@ class HWInterface:
         if self.button_pressed:
             self.lcd.reset_lcd()
             self.button_pressed = False
+        elif self.rotated and self.screen != 1:
+            self.screen = 1
+            self.lcd.reset_lcd()
+        self.rotated = False
         self.lcd.move_cursor(0)
         if self.screen == 0:
             ips = check_output(['hostname', '--all-ip-addresses'])
