@@ -68,6 +68,31 @@ def connecting():
     index_data_emit()
 
 
+@socketio.on("sensor")
+def sensor_data():
+    sensors = []
+    sensors.append(("ADA375 Door sensor", hw.door_sensor.walkin,))
+    sensors.append(("HCSR501 Motion sensor", hw.pir_sensor.walkin,))
+    socketio.emit("sensor-list", sensors)
+    socketio.emit("alarm_timeouts", {"walkin": hw.countdown_walkin, "walkout": hw.countdown_walkout})
+    socketio.emit("heating-linked", hw.link_heating)
+
+
+@socketio.on("toggle-heating-link")
+def toggle_heating_link():
+    hw.link_heating = not hw.link_heating
+    socketio.emit("heating-linked", hw.link_heating)
+
+
+@socketio.on("change-sensor-walkin")
+def change_walking(data):
+    if data == "ADA375 Door sensor":
+        hw.door_sensor.walkin = not hw.door_sensor.walkin
+    elif data == "HCSR501 Motion sensor":
+        hw.pir_sensor.walkin = not hw.pir_sensor.walkin
+    sensor_data()
+
+
 @socketio.on("toggle_alarm")
 def toggle_alarm():
     hw.change_alarm_status()
@@ -106,6 +131,7 @@ def periodic_data_emit():
 
 def index_data_emit():
     alarm_status = "unavailable"
+    socketio.emit("heating-linked", hw.link_heating)
     if hw.alarm_raised:
         alarm_status = "ALARM"
     elif hw.armed:
