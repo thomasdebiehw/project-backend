@@ -50,7 +50,7 @@ def get_components():
 def get_events():
     if request.method == 'GET':
         components = conn.get_data(
-            "SELECT * FROM event ORDER BY idevent DESC LIMIT 100;")
+            "SELECT event.*, user.username, component.* FROM event INNER JOIN user ON event.iduser = user.iduser INNER JOIN component on event.idcomponent = component.idcomponent ORDER BY idevent DESC LIMIT 100;")
         return jsonify(components), 200
 
 
