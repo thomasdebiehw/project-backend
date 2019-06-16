@@ -200,11 +200,11 @@ class HWInterface:
             if self.arming:
                 self.lcd.write_string("System ARMING in")
                 self.lcd.second_line()
-                self.lcd.write_string("{0} seconds      ".format(str(int(self.buzzer.countdown_timer))))
+                self.lcd.write_string("{0} seconds       ".format(str(int(self.buzzer.countdown_timer))))
             elif self.triggered and not self.alarm_raised:
                 self.lcd.write_string("DISARM NOW")
                 self.lcd.second_line()
-                self.lcd.write_string("{0} seconds ".format(str(int(self.buzzer.countdown_timer))))
+                self.lcd.write_string("{0} seconds       ".format(str(int(self.buzzer.countdown_timer))))
             elif self.alarm_raised:
                 self.lcd.write_string("ALARM                           ")
             elif self.armed:

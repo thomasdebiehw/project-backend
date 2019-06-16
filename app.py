@@ -62,6 +62,14 @@ def get_measurements():
         return jsonify(components), 200
 
 
+@app.route(endpoint + '/list/temperature', methods=['GET'])
+def get_measurements_temp():
+    if request.method == 'GET':
+        components = conn.get_data(
+            "SELECT * FROM alarmostat.measurement INNER JOIN component ON measurement.idcomponent = component.idcomponent where componenttype = 'thermostat' order by idmeasurement desc limit 5000;")
+        return jsonify(components), 200
+
+
 @socketio.on("connect")
 def connecting():
     print("Connection with client established")
