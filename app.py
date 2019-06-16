@@ -13,7 +13,7 @@ hw = HWInterface()
 
 
 conn = Database(app=app, user='project', password='ditwachtwoordmagjezekerweten',
-                db='alarmostat', host='169.254.10.1', port=3306)
+                db='alarmostat', host='localhost', port=3306)
 endpoint = '/api/v1'
 
 
@@ -163,6 +163,6 @@ periodic_emit_t = threading.Thread(target=periodic_data_emit)
 periodic_emit_t.start()
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')
 
 

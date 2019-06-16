@@ -184,7 +184,6 @@ class HWInterface:
                 self.lcd.write_string("Door open  ")
 
         elif self.screen == 3:
-            self.lcd.write_string("No events")
             self.lcd.second_line()
             if self.armed:
                 self.lcd.write_string("System ARMED")
