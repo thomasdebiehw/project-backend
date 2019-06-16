@@ -118,13 +118,13 @@ def change_walkout(data):
 @socketio.on("clear-alarm-status")
 def clear():
     hw.web_show_alarm = False
+    index_data_emit()
 
 
 def periodic_data_emit():
     while True:
         print("periodic emit")
         index_data_emit()
-        new_alarm_raised_events_emit()
         time.sleep(10)
 
 
@@ -147,14 +147,15 @@ def index_data_emit():
     socketio.emit("index_emit", {"alarm_status": alarm_status, "heating_status": heating_status,
                                 "set_temperature": hw.temperature_set,
                                 "current_temperature": hw.current_temperature})
+    new_alarm_raised_events_emit()
 
 
 def new_alarm_raised_events_emit():
-    obj = {}
+    obj = {"empty": True}
     if hw.web_show_alarm:
         events = hw.db_get_events("alarm_raised", 1)
         if len(events) != 0:
-            obj = {"time": events[0][1].strftime("%d/%m/%Y, %H:%M"), "sensor": events[0][6]}
+            obj = {"empty": False, "time": events[0][1].strftime("%d/%m/%Y, %H:%M"), "sensor": events[0][6]}
     socketio.emit("new_alarm_raised_events", obj)
 
 
