@@ -28,6 +28,7 @@ class HWInterface:
         self.triggered = False
         self.alarm_raised = False
         self.link_heating = True
+        self.web_show_alarm = False
         self.last_event_user = 0
         self.countdown_walkin = 5
         self.countdown_walkout = 5
@@ -299,6 +300,7 @@ class HWInterface:
         alarmt.setDaemon(True)
         alarmt.start()
         self.alarm_raised = True
+        self.web_show_alarm = True
         self.db_add_event("alarm_raised", sensor, "system")
 
     def db_get_values_by_id(self, table, id, column=""):
@@ -330,7 +332,7 @@ class HWInterface:
             self.dbout.append(x)
             print(x)
         idcomponent = self.dbout[0][0]
-        sql = "INSERT INTO event (idevent, eventdatetime, eventtype, idcomponent, iduser, acknowledged) VALUES (DEFAULT, %s, %s, %s, %s, FALSE);"
+        sql = "INSERT INTO event (idevent, eventdatetime, eventtype, idcomponent, iduser) VALUES (DEFAULT, %s, %s, %s, %s);"
         val = (formatted_date, eventtype, idcomponent, iduser)
         self.mycursor.execute(sql, val)
         self.mydb.commit()
@@ -358,33 +360,16 @@ class HWInterface:
             self.dbout.append(x)
             print(x)
 
-    def db_get_events(self, event_type, acknowledged=False):
-        self.mycursor.execute(
-            "SELECT * FROM event WHERE eventtype=\'{0}\' AND acknowledged=\'{1}\';".format(event_type, acknowledged)
-        )
+    def db_get_events(self, event_type, limit=0):
+        if limit == 0:
+            self.mycursor.execute("SELECT * FROM event INNER JOIN component on event.idcomponent = component.idcomponent WHERE eventtype=\'{0}\' order by idevent desc;".format(event_type))
+        else:
+            self.mycursor.execute("SELECT * FROM event INNER JOIN component on event.idcomponent = component.idcomponent WHERE eventtype=\'{0}\' order by idevent desc limit {1};".format(event_type, limit))
         out = []
         for x in self.mycursor:
             out.append(x)
         return out
 
-    def db_get_events_readable(self, event_type, acknowledged=False):
-        data = self.db_get_events(event_type, acknowledged)
-        out = []
-        for x in data:
-            print(x)
-            out.append((x[0], x[1].strftime('%Y-%m-%d %H:%M:%S'), x[2], self.db_get_values_by_id("component", x[3], column="componentname")[0][0], self.db_get_values_by_id("user", x[4], column="username")[0][0], x[5]))
-        print(out)
-        return out
-
-    def db_acknowledge_event(self, id):
-        print("ack")
-        sql = "UPDATE event SET acknowledged=TRUE WHERE idevent={0};".format(str(id))
-        self.mycursor.execute(sql)
-        self.mydb.commit()
-        self.dbout = []
-        for x in self.mycursor:
-            self.dbout.append(x)
-            print(x)
 
     def temperature_control(self):
         if self.temperature_set - self.current_temperature >= 0.5 and not self.heating.is_on():

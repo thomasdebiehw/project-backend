@@ -105,12 +105,6 @@ def change_temperature(data):
     hw.temperature_set = float(data)
 
 
-@socketio.on("acknowledge_event")
-def ack_event(data):
-    hw.db_acknowledge_event(data)
-    new_alarm_raised_events_emit()
-
-
 @socketio.on("change-walkin")
 def change_walkin(data):
     hw.countdown_walkin = int(data)
@@ -119,6 +113,11 @@ def change_walkin(data):
 @socketio.on("change-walkout")
 def change_walkout(data):
     hw.countdown_walkout = int(data)
+
+
+@socketio.on("clear-alarm-status")
+def clear():
+    hw.web_show_alarm = False
 
 
 def periodic_data_emit():
@@ -151,8 +150,12 @@ def index_data_emit():
 
 
 def new_alarm_raised_events_emit():
-    events = hw.db_get_events_readable("alarm_raised")
-    socketio.emit("new_alarm_raised_events", events)
+    obj = {}
+    if hw.web_show_alarm:
+        events = hw.db_get_events("alarm_raised", 1)
+        if len(events) != 0:
+            obj = {"time": events[0][1].strftime("%d/%m/%Y, %H:%M"), "sensor": events[0][6]}
+    socketio.emit("new_alarm_raised_events", obj)
 
 
 periodic_emit_t = threading.Thread(target=periodic_data_emit)
