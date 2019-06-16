@@ -370,13 +370,14 @@ class HWInterface:
             out.append(x)
         return out
 
-
     def temperature_control(self):
         if self.temperature_set - self.current_temperature >= 0.5 and not self.heating.is_on():
             print("aan")
+            self.db_add_event("heating_on", "heating", "system")
             self.heating.on()
         elif self.current_temperature - self.temperature_set >= 0.5 and self.heating.is_on():
             print("uit")
+            self.db_add_event("heating_off", "heating", "system")
             self.heating.off()
 
 
