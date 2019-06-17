@@ -27,3 +27,13 @@ $:  sudo chmod 644 /lib/systemd/system/alarmostat.service
 $:  sudo systemctl daemon-reload
 $:  sudo systemctl enable alarmostat.service
 ```
+
+
+The database file contains the needed values already, you shoudl add a insert a new user with an rfidtag though.
+You might have to create a new user though. In the program these credentials are used:
+
+user: project
+
+password: ditwachtwoordmagjezekerweten
+
+You could also change these in the program instead.
